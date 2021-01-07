@@ -90,7 +90,7 @@ task_deploy() {
 	find . -name "*.deb";
 	
 	task_begin "Uploading deb package";
-	archive-upload-deb; # Script on our CI server that marks all .deb files in the current directory as build artifacts and uploading them to our apt repository
+	archive-upload-debs; # Script on our CI server that marks all .deb files in the current directory as build artifacts and uploading them to our apt repository
 	task_end "$?";
 }
 
