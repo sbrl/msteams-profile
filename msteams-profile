@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+mode="${1}";
+
+# The path to the profile directory to manage
+MSTEAMS_PROFILE_PATH="${MSTEAMS_PROFILE_PATH:-${HOME}/.config/Microsoft/Microsoft Teams}";
+
+profiles_dirname="__custom_msteams_profiles";
+profiles_dir="$(dirname "${MSTEAMS_PROFILE_PATH}")/${profiles_dirname}";
+
+###############################################################################
+# From the Lantern Build Engine
+if [[ -z "${NO_COLOR}" ]]; then
+	RS="\033[0m";    # reset
+	HC="\033[1m";    # hicolor
+	UL="\033[4m";    # underline
+	INV="\033[7m";   # inverse background and foreground
+	LC="\033[2m";    # locolor / dim
+	FBLK="\033[30m"; # foreground black
+	FRED="\033[31m"; # foreground red
+	FGRN="\033[32m"; # foreground green
+	FYEL="\033[33m"; # foreground yellow
+	FBLE="\033[34m"; # foreground blue
+	FMAG="\033[35m"; # foreground magenta
+	FCYN="\033[36m"; # foreground cyan
+	FWHT="\033[37m"; # foreground white
+	BBLK="\033[40m"; # background black
+	BRED="\033[41m"; # background red
+	BGRN="\033[42m"; # background green
+	BYEL="\033[43m"; # background yellow
+	BBLE="\033[44m"; # background blue
+	BMAG="\033[45m"; # background magenta
+	BCYN="\033[46m"; # background cyan
+	BWHT="\033[47m"; # background white
+fi
+###############################################################################
+
+if [[ -z "${mode}" ]]; then
+	echo -e "Usage: msteams-profile <subcommand> [<arguments>]
+	
+	msteams-profile show
+		Display the name of the currently active profile
+	msteams-profile list
+		List all available profiles
+	msteams-profile switch <profile_name>
+		Switch to the profile with the specified name, creating it if it doesn't exist
+" 2>&1;
+	exit;
+fi
+
+###############################################################################
+
+if [[ ! -d "${profiles_dir}" ]]; then
+	mkdir "${profiles_dir}";
+fi
+
+# If Microsoft Teams hasn't been started yet, create an empty directory for the default profile
+if [[ ! -d "${MSTEAMS_PROFILE_PATH}" ]] && [[ ! -L "${MSTEAMS_PROFILE_PATH}" ]]; then
+	mkdir "${MSTEAMS_PROFILE_PATH}";
+fi
+
+if [[ ! -L "${MSTEAMS_PROFILE_PATH}" ]]; then
+	mv "${MSTEAMS_PROFILE_PATH}" "${profiles_dir}/default";
+	ln -s "${profiles_dirname}/default" "${MSTEAMS_PROFILE_PATH}";
+fi
+
+###############################################################################
+
+case "${mode}" in
+	show )
+		basename "$(readlink "${MSTEAMS_PROFILE_PATH}")";
+		;;
+	
+	list )
+		ls -1 "${profiles_dir}";
+		;;
+	
+	switch )
+		target_profile_name="${2}";
+		
+		if [[ -z "${target_profile_name}" ]]; then
+			echo -e "${HC}${FRED}[msteams-profile] Error: No target profile name to switch to specified.${RS}" >&2;
+			exit 1;
+		fi
+		
+		# Create a new profile directory if it doesn't exist already
+		if [[ ! -d "${profiles_dir}/${target_profile_name}" ]]; then
+			echo -e "[msteams-profile] Creating new profile" >&2;
+			mkdir "${profiles_dir}/${target_profile_name}";
+		fi
+		
+		rm "${MSTEAMS_PROFILE_PATH}";
+		ln -s "${profiles_dirname}/${target_profile_name}" "${MSTEAMS_PROFILE_PATH}";
+		
+		echo -e "[msteams-profile] Activated profile ${HC}${FGRN}${target_profile_name}${RS} successfully";
+		;;
+	
+	* )
+		echo -e "${HC}${FRED}[msteams-profile] Error: Unknown mode '${mode}'.${RS}";
+		;;
+esac
