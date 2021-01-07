@@ -9,7 +9,7 @@ cd "$(dirname "$(readlink -f "$0")")" || { echo "Error: Failed to cd to script d
 project_name="msteams-profile";
 
 # The path to the lantern build engine git submodule
-lantern_path=".";
+lantern_path="./lantern-build-engine";
 
 ###
 # Custom Settings
