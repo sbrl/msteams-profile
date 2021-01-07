@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# Make sure the current directory is the location of this script to simplify matters
+cd "$(dirname "$(readlink -f "$0")")" || { echo "Error: Failed to cd to script directory" >&2; exit 1; };
+################
+### Settings ###
+################
+
+# The name of this project
+project_name="msteams-profile";
+
+# The path to the lantern build engine git submodule
+lantern_path=".";
+
+###
+# Custom Settings
+###
+
+package_name="msteams-profile";
+description="msteams-profile: Shell script to manage multiple Microsoft Teams profiles
+
+This package contains a shell script called 'msteams-profile' that allows you to manage multiple Microsoft Teams profiles. It is assumed that your Microsoft Teams profile is stored at '~/.config/Microsoft Teams'.";
+
+# Put any custom settings here.
+build_output_folder="./dist";
+
+###############################################################################
+
+# Check out the lantern git submodule if needed
+if [ ! -f "${lantern_path}/lantern.sh" ]; then git submodule update --init "${lantern_path}"; fi
+
+#shellcheck disable=SC1090
+source "${lantern_path}/lantern.sh";
+
+if [[ "$#" -lt 1 ]]; then
+	echo -e "${FBLE}${project_name}${RS} build script";
+	echo -e "    by Starbeamrainbowlabs";
+	# shellcheck disable=SC2154
+	echo -e "${LC}Powered by the lantern build engine, v${version}${RS}";
+	echo -e "";
+	echo -e "${CSECTION}Usage${RS}";
+	echo -e "    ./build ${CTOKEN}{action}${RS} ${CTOKEN}{action}${RS} ${CTOKEN}{action}${RS} ...";
+	echo -e "";
+	echo -e "${CSECTION}Available actions${RS}";
+	echo -e "    ${CACTION}setup${RS}            - Perform initial setup";
+	echo -e "    ${CACTION}ci${RS}               - Run CI tasks";
+	echo -e "    ${CACTION}package${RS}          - Package .deb file with fpm";
+	echo -e "";
+	
+	exit 1;
+fi
+
+###############################################################################
+
+task_setup() {
+	task_begin "Setting up";
+	
+	check_command fpm true;
+	
+	subtask_begin "Creating build output directory";
+	mkdir -p "${build_output_folder}";
+	subtask_end $?;
+	
+	subtask_begin "Initialising submodules";
+	git submodule update --init;
+	subtask_end $?;
+	
+	task_end 0;
+}
+
+task_package() {
+	task_begin "Packaging msteams-profile";
+	
+	fpm -s dir -t deb -n "${package_name}" \
+		-v "${version}" \
+		--license MPL2.0 \
+		--architecture "all" \
+		--maintainer "Starbeamrainbowlabs <feedback@starbeamrainbowlabs.com>" \
+		--vendor "Starbeamrainbowlabs <feedback@starbeamrainbowlabs.com>" \
+		--description "${description}" \
+		--url "https://gitlab.com/sbrl/bin/blob/master/tldr-missing-pages" \
+		--depends "coreutils" --depends "bash" \
+		"./msteams-profile=/usr/local/bin/msteams-profile" \
+		"./msteams-profile-completion.bash=/usr/share/bash-completion/completions/msteams-profile";
+	
+	task_end "$?";
+}
+
+task_deploy() {
+	echo -e "${HC}${FCYN}Packages:${RS}";
+	find . -name "*.deb";
+	
+	task_begin "Uploading deb package";
+	archive-upload-deb; # Script on our CI server that marks all .deb files in the current directory as build artifacts and uploading them to our apt repository
+	task_end "$?";
+}
+
+task_ci() {
+	tasks_run package deploy;
+}
+
+###############################################################################
+
+tasks_run "$@";
