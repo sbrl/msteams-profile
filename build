@@ -77,7 +77,7 @@ task_package() {
 		--maintainer "Starbeamrainbowlabs <feedback@starbeamrainbowlabs.com>" \
 		--vendor "Starbeamrainbowlabs <feedback@starbeamrainbowlabs.com>" \
 		--description "${description}" \
-		--url "https://gitlab.com/sbrl/bin/blob/master/tldr-missing-pages" \
+		--url "https://github.com/sbrl/msteams-profile" \
 		--depends "coreutils" --depends "bash" \
 		"./msteams-profile=/usr/local/bin/msteams-profile" \
 		"./msteams-profile-completion.bash=/usr/share/bash-completion/completions/msteams-profile";
