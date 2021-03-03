@@ -89,10 +89,24 @@ case "${mode}" in
 			mkdir "${profiles_dir}/${target_profile_name}";
 		fi
 		
+		# Stop teams if it is still running
+		pidof teams > /dev/null
+		running=$?
+		if [ $running == 0 ]; then
+			echo "Teams is still running. It will be stopped and restarted automatically.";
+			IFS=' '; read -ra ADDR <<< `pidof teams`; for i in ${ADDR[@]}; do echo $i; done | sort | head -n 1 | xargs kill > /dev/null;
+		fi;
+
+		# Switch profiles
 		rm "${MSTEAMS_PROFILE_PATH}";
 		ln -s "${profiles_dirname}/${target_profile_name}" "${MSTEAMS_PROFILE_PATH}";
 		
 		echo -e "[msteams-profile] Activated profile ${HC}${FGRN}${target_profile_name}${RS} successfully";
+
+		# Restart if it was running before
+		if [ $running == 0 ]; then
+			teams &
+		fi;
 		;;
 	
 	* )
